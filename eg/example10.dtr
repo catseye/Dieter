@@ -1,0 +1,23 @@
+/* -*- encoding: utf-8 -*- */
+/* from the article */
+
+module tagged
+
+  var tag_map : map to string
+
+  procedure make_tagged(x: ♥t): tagged ♥t
+  begin
+    return (bestow tagged x)
+  end
+
+  procedure tag(x: tagged ♥t, y: string): void
+  begin
+    tag_map[x] := y
+  end
+
+  procedure get_tag(x: tagged ♥t): string
+  begin
+    return tag_map[x]
+  end
+
+end.

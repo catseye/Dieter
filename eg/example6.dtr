@@ -1,0 +1,10 @@
+/* -*- encoding: utf-8 -*- */
+/* simple check for wrong concrete type assignment */
+
+module example6 fails
+  procedure grief(b: bool, i: int): bool
+  begin
+    b := i
+    return b
+  end
+end.

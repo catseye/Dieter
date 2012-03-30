@@ -1,0 +1,13 @@
+/* -*- encoding: utf-8 -*- */
+/* check that only module x can bestow x qualifier on types */
+
+module beefy fails /* because we can't bestow snarky here */
+  procedure hit(input: int): snarky int
+  begin
+    return bestow snarky input
+  end
+end
+
+module snarky
+  procedure polymorph(value: ♥t): ♥t return value
+end.

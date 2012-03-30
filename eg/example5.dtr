@@ -1,0 +1,24 @@
+/* -*- encoding: utf-8 -*- */
+/* check that "if" can accept a beefy bool */
+
+order beefy < snarky
+
+forward beef(bool, int): int
+forward turkey(int, int, int): bool
+
+module beefy
+  var pink: bool
+  procedure grief(cake: beefy bool): beefy int
+  begin
+    beef(cake,5)
+    pink := turkey(1,2,3)
+    if cake then
+      return bestow beefy 5
+    else
+      return bestow beefy 6
+  end
+end
+
+module snarky
+  procedure polymorph(value: ♥t): ♥t return value
+end.

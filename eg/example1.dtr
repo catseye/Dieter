@@ -1,0 +1,19 @@
+/* -*- encoding: utf-8 -*- */
+/* check that diff instances of equal(♥t, ♥t) can unify to diff types */
+
+forward and(bool, bool): bool
+forward equal(♥t, ♥t): bool
+forward print(string): void
+
+module example1
+
+procedure thing(): void
+  var i: int
+  var j: int
+  var s: string
+  var t: string
+begin
+  if and(equal(i, j), equal(s, t)) then print("yes") else print("no")
+end
+
+end.

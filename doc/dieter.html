@@ -1,0 +1,566 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<!-- encoding: UTF-8 -->
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+<head>
+<title>The Dieter Programming Language</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  <!-- begin html doc dynamic markup -->
+  <script type="text/javascript" src="/contrib/jquery-1.6.4.min.js"></script>
+  <script type="text/javascript" src="/scripts/documentation.js"></script>
+  <!-- end html doc dynamic markup -->
+</head>
+<body>
+
+<h1>The Dieter Programming Language</h1>
+
+<h2>Description</h2>
+
+<p><dfn>Dieter</dfn> (that's Dieter as in the German masculine given name Dieter,
+not dieter as in "one who diets")
+is a little experimental programming language which conflates <em>type qualifiers</em> with <em>modules</em>.
+In this article, we'll first describe these mechanisms.  Then we'll show how their interaction
+produces something that resembles object-oriented programming.</p>
+
+<h3>Type Qualifiers</h3>
+
+<p>A <dfn>type qualifier</dfn> is simply a keyword which may be placed before any type expression,
+further specializing it.  Type qualifiers should be familiar to programmers of C, where
+<em>storage classes</em>, such as <code>const</code> and <code>static</code>, are
+examples of type qualifiers.  The cardinal rule of type qualifiers in Dieter is this:
+<strong>during assignment (or parameter-passing), a variable (or parameter)
+whose type possesses some type qualifier
+<em>only</em> accepts values of the same type that possess <em>at least</em> that same qualifier.</strong></p>
+
+<p>Some basic properties of type qualifiers follow (but first, for concreteness, let's
+stipulate that Dieter has an assortment of primitive types:
+<code>bool</code>, <code>int</code>, <code>rat</code>, and <code>string</code>.
+And <code>void</code> denoting the type of the absence of any value.)
+The order that type qualifiers are given in a type expression doesn't matter:
+if <code>beefy</code> and <code>gnarly</code> are type qualifiers, then
+<code>beefy gnarly int</code> and <code>gnarly beefy int</code> are wholly equivalent types.
+Neither does the number of occurrences matter: <code>beefy gnarly beefy int</code>
+is equivalent to
+<code>beefy gnarly int</code>.  Algebraically speaking, type qualifiers are
+<dfn>commmutative</dfn> and <dfn>idempotent</dfn>.</p>
+
+<p>You can't assign an <code>int</code> to a <code>beefy int</code> (or pass it to a procedure
+expecting a <code>beefy int</code>,) but you can assign a <code>beefy int</code> to an <code>int</code>.
+This might sound counter-intuitive initially, but after you think about it a bit I'm sure
+you'll conclude it's appropriate: it's just like how you can
+assign a <code>const int</code> to an <code>int</code> in C, but not an
+<code>int</code> to a <code>const int</code>.  <code>int</code> is more general, and
+will tolerate information being lost in the copy, whereas <code>beefy int</code>
+is more specific, and will not accept a value with insufficient information associated with it.
+Or, if you prefer, while all <code>beefy int</code>s are <code>int</code>s, there are
+<code>int</code>s that aren't <code>beefy</code> and thus can't be assigned to a
+variable which is restricted to <code>beefy int</code>s.</p>
+
+<h3>Type Operators</h3>
+
+<p>In order to make use of type qualifiers in user programs, Dieter provides <dfn>type operators</dfn>,
+similar to C's type-casting facilities, to manipulate type qualifiers.</p>
+
+<p>In fact, Dieter has only one explicit type
+operator,  called <code>bestow</code>. It can be used in an expression to endow its type
+with further type qualifiers.  <code>bestow</code> takes a
+type qualifier <var>q</var> and a value of some type <var>t</var>
+and returns a new value of type <var>q</var>·<var>t</var>.  (You
+can think of <var>q</var>·<var>t</var> as a kind of pseudo-product type
+that obeys the algebraic laws given in the previous section rather than those of conventional products.)</p>
+
+<p>The complementary operation — stripping <var>q</var>·<var>t</var>
+back to <var>t</var> — is not explicitly denoted; it happens automatically as needed.
+(This is the underlying rule that was in effect, when we stated that
+a <code>beefy int</code> can be assigned to an <code>int</code>.)</p>
+
+<p>Note that type operators in no way alter the <em>value</em> of the expression they are
+used in, only its <em>type</em>.</p>
+
+<h3>Type Variables</h3>
+
+<p>Dieter supports uniform polymorphic types.  Type expressions can contain <dfn>type
+variables</dfn> (which I'll denote with ♥ for no good reason)
+which can unify with concrete types or other type variables during instantiation of a language
+construct.  In practice, this means that procedures can have type
+variables in their parameter and return types; these variables are
+replaced by types specified at the call site whenever a procedure call is type-checked.</p>
+
+<p>The scope of each type variable ranges over a single instance of a single procedure.
+So <code>♥x</code> in the parameter list of <code>grunt</code> is the same type as
+every occurrence of <code>♥x</code> anywhere in the definition of <code>grunt</code> during that
+same invokation of <code>grunt</code>, but may be different from <code>♥x</code> in
+other invokations of <code>grunt</code> (calls to <code>grunt</code> from different call sites),
+and different from <code>♥x</code> appearing in other procedures entirely.</p>
+
+<p>A complication for polymorphism in Dieter is that type variables range not only over core type expressions,
+but <em>also</em> over type qualifiers.  That is, the types <code>beefy gnarly int</code>
+and <code>beefy ♥t</code> unify, and their most general unifier is
+{<code>♥t</code> → <code>gnarly int</code>}.
+This has a few implications for the unification algorithm;
+see <a href="#appendix_a">Appendix A</a> for a detailed discussion of these.</p>
+
+<h3>Modules</h3>
+
+<p>Dieter is a modular language, which has its usual meaning — a Dieter program consists of a set of modules,
+each of which exposes only its interface, not its implementation, to all other modules.
+In Dieter, however, there is a notable twist: every type qualifier is defined by some module which bears the same name.
+The key idea of Dieter is this:
+<strong>a type operator that affects a given qualifier may <em>only</em>
+be used in the module which defines that qualifier.</strong>
+The reasoning for this is similar to the argument
+against using casts in the C language: the goal of typing is to specify constraints
+on the program's structure and to automatically check that they are met.
+If programmers are allowed to muck with types willy-nilly,
+it defeats the purpose of having these constraints in the first place.
+So the power to <code>bestow</code> a particular type qualifier is only given out to
+the module "in charge" of that type qualifier.  This is a form of encapsulation:
+the internal details of some thing (in this case, a type modifier)
+can only be manipulated by the implementation of that thing.</p>
+
+<h3>Procedures</h3>
+
+<p>Each Dieter module consists of a set of procedure declarations.
+Any procedure can be called from any procedure in any module;
+they are comparable to <code>public static</code> methods in Java in this respect.
+Procedures are polymorphic, as mentioned; each one's parameter and return types
+can contain type variables.  At each call site, the type variables are unified with
+the types of the values being passed to them, and resolved ultimately to concrete types.</p>
+
+<p>A bit of administrivia that we should also mention is that Dieter requires procedures to be declared, though not necessarily
+defined, before they are called.  Much like Pascal, it offers a <code>forward</code> declaration
+construct for this purpose.  It can also be used to declare procedures intrinsic to the implementation,
+procedures external to some set of modules, or completely ficticious procedures for the purpose
+of demonstrating and testing the type system.</p>
+
+<h3>Example</h3>
+
+<p>We're now ready to give a very simple example of a Dieter module.</p>
+
+<pre>module beefy
+
+  procedure beef_up(x: ♥t): beefy ♥t
+  begin
+    return (bestow beefy x)
+  end
+
+end</pre>
+
+<p>The intent of this example is to get the general gist of the language across,
+not to demonstrate good programming practice.  The procedure <code>beef_up</code>
+essentially behaves as <code>bestow</code>, except, being a procedure, it may be
+called from any procedure, including those in other modules.  So, it breaks the
+abstraction we just presented; it implements something akin to a
+"generic setter method," providing direct access to a data member that is ordinarily private.</p>
+
+<h3>Object-oriented Programming</h3>
+
+<p>We'll now try to show that this interaction between type qualifiers and modules
+produces something resembling object-oriented programming
+by adding three language features to Dieter: a declaration form and two new types.</p>
+
+<ul>
+<li><dfn>Module-level variables</dfn> are variables that are instantiated
+on, well, the level of the module.  (This is in contrast to local variables
+in procedures, which I haven't said anything about, but which I've nevertheless assumed
+exist in Dieter...)  Module-level variables can't be accessed
+directly from outside the module; they're comparable to <code>private static</code> fields
+in Java.</li>
+<li><code>ref</code> is a built-in type.  These aren't references <em>to</em> anything;
+each is just a unique value, much like values of <code>ref</code> type in the language
+Erlang.  A program can obtain a new <code>ref</code>
+value by calling <code>new_ref()</code>; the value thus obtained is
+guaranteed to be different from all other <code>ref</code> values in
+the program.</li>
+<li><code>map</code> is a built-in type constructor, over range (key)
+and domain (value) types, that defines a data structure that acts like a dictionary.
+The usual square-bracket syntax <code>x[y]</code> is used to reference a location
+within a map.</li>
+</ul>
+
+<p>We can now construct a class of objects like so:</p>
+
+<pre>module person
+
+  var name_map: map from person ref to string
+  var age_map: map from person ref to int
+
+  procedure person_new(name: string, age: int): person ref
+    var p: person ref
+  begin
+    p := bestow person new_ref()
+    name_map[p] := name
+    age_map[p] := age
+    return p
+  end
+
+  procedure person_get_name(p: person ref): string
+  begin
+    return name_map[p]
+  end
+
+  procedure person_attend_birthday_party(p: person ref): void
+  begin
+    age_map[p] := succ(age_map[p])
+  end
+
+end</pre>
+
+<p>Because the type qualifier <code>person</code> is defined by the module
+<code>person</code>, which only uses <code>bestow</code> in one place,
+we know exactly what kind of expressions can result in a type qualified by <code>person</code>.
+More to the point, we know that no other procedure in any other module
+can create a <code>person</code>-qualified type without calling <code>person_new</code>.</p>
+
+<h3>Mixins</h3>
+
+<p>If we loosen the constraints on <code>map</code>s, and say that
+the range (key) type can be left unspecified and that values of all
+types can be used as keys in any given <code>map</code>, then we have
+have a way to make type qualifiers work like <dfn>mixins</dfn>:</p>
+
+<pre>module tagged
+
+  var tag_map : map to string
+
+  procedure make_tagged(x: ♥t): tagged ♥t
+  begin
+    return (bestow tagged x)
+  end
+
+  procedure tag(x: tagged ♥t, y: string): void
+  begin
+    tag_map[x] := y
+  end
+
+  procedure get_tag(x: tagged ♥t): string
+  begin
+    return tag_map[x]
+  end
+
+end</pre>
+
+<p>I think this demonstrates an underrated principle of OO, namely <em>identity</em>.
+If I call <code>tag(make_tagged(4), "mine")</code>, do <em>all</em> occurrences of 4
+have that tag, or just the ephemeral instance of 4 passed to <code>tag</code>?
+If there can't be seperate instances of 4, that might be a reason for OO languages to
+not treat it as an object.  And if you believe seperate instances of 4 are silly, that's
+an argument against "everything is an object".</p>
+
+<h3>Inheritance</h3>
+
+<p>Since module-level variables
+are private to each module, they give Dieter something akin to traditional
+encapsulation.  But what about inheritance?</p>
+
+<p>Well, we can get something like inheritance if we give Dieter another
+feature.  We haven't said much about scope of names so far; in particular,
+we haven't said what happens when one declares two different procedures
+with the same name and number of parameters, and what, if anything, should happen
+when client code tries to call such ambiguously declared procedures.</p>
+
+<p>Hey, in the spirit of compromise, let's just say that when this happens,
+<em>all</em> those procedures are called!  Specifically, all the procedures
+whose formal parameter types are compatible with the types of the actual parameters are called
+— procedures with parameters of completely different types, or of more
+highly qualified types, are not called.</p>
+
+<p>And, to keep this interesting, let's say that the order in which these procedures are called
+depends on the generality of their parameter types.
+If <code>grind(beefy ♥t):void</code> and <code>grind(beefy gnarly ♥t):void</code>
+are both defined, and <code>grind</code> is called with a variable whose type is qualified
+with both <code>beefy</code> and <code>gnarly</code>, then
+<code>grind(beefy ♥t):void</code> (the more general)
+should be called first, then
+<code>grind(beefy gnarly ♥t):void</code> (the more specific)
+called second.</p>
+
+<p>There are a few issues now that need to be dealt with.</p>
+
+<ul>
+<li>We've discussed compatibility of parameter types of a procedure,
+but not its return type.  For simplicity, let's just disallow differing return types
+on different procedures with the same name — it's a compile-time error.</li>
+
+<li>It would be nice if procedures had a way to capture the results of a
+procedure that was called before them in this calling chain.  So, let's say
+that every procedure has access to an implicit read-only variable that holds the result
+of the previous procedure (if any) that was executed along this chain.  The
+type of this variable will always be the same as the return type of the current
+procedure (because by the previous bullet point, the previous procedure must
+have had the same return type as the current one.)  If no previous procedure
+with this signature was executed, the value will be <code>nil</code>.
+For syntax, let's call this implicit variable <code>super</code>.</li>
+
+<li>It would also be nice if a procedure could prevent
+any further procedures from being called in this chain.
+Let's give Dieter a special form of <code>return</code> for
+this purpose — say, <code>return final</code>.</li>
+
+<li>Finally, what about incomparable signatures?  Say that, in the above example,
+procedures <code>grind(gnarly ♥t):void</code> and <code>grind(♥t):void</code>
+are defined too.  Then, when <code>grind</code> is called with a
+<code>beefy gnarly</code> variable, <code>grind(♥t):void</code>
+gets called first (it's the most general), but which gets called next:
+<code>grind(gnarly ♥t):void</code> or
+<code>grind(beefy ♥t):void</code>?  We can let the programmer
+give some sort of disambiguating assertion, like
+<code>order beefy &lt; gnarly</code>, to enforce a partial ordering between type
+qualifiers.  Then we know that the more general procedure —
+in this case <code>grind(gnarly ♥t):void</code> —
+will be called before <code>grind(beefy ♥t):void</code>, because we just
+noted that, all other things being equal, we want <code>gnarly</code>
+to be treated as more general than <code>beefy</code>.</li>
+</ul>
+
+<p>Now: do you think it's a coincidence that the last problem looks similar
+to the problems that come from multiple inheritance, where we don't quite know
+what we should be inheriting when two of our superclasses are descendants of
+the same class?  Well, I can tell you this
+much: it's definately <em>not</em>
+a coincidence that I chose <code>super</code> and <code>final</code> for the
+names of the other two features!</p>
+
+<p>This whole thing looks to me very much as if we were
+approaching object-oriented programming from another direction.
+Which might not be such a surprise, if one thinks of subclassing as
+a special form of type qualification.</p>
+
+<p>Of course, it's not <em>quite</em> the same in Dieter as it is in most OO languages.
+For example, procedures in Dieter do not actually override those with more general
+(less qualified) signatures, they simply add to them.  But, those
+more specific procedures could be written to ignore the results of, and undo the state
+changes of, the more general procedures in the chain that were called first,
+which would accomplish essentially the same thing.</p>
+
+<h2>Background</h2>
+
+<p>Why did I design this language, anyway?</p>
+
+<h3>Hungarian Notation</h3>
+
+<p>The origins of the central idea in Dieter — <strong>encapsulate type qualifiers
+in modules that define them</strong> — was an indirect result of reading
+<a class="external" href="http://www.joelonsoftware.com/articles/Wrong.html">Joel Spolsky's
+explanation of the value of Hungarian notation</a>.  He contrasts the original notion of
+Hungarian notation with the cargo-cultist convention that it somehow degenerated into.  He
+explains how it helps make incorrect programs look incorrect.</p>
+
+<p>I thought, why stop there?  If the purpose of Hungarian notation is to make evident assignment errors between
+variables that have the same type but different <em>roles</em>, then why can't
+you have the compiler type-check the roles, too?  Well, you can, and that's
+basically what Dieter is doing with type qualifiers — using them as
+a computer-checkable form of Hungarian notation.</p>
+
+<h3>Aliasing Prevention</h3>
+
+<p>What further spurred development of the idea was the problem of aliasing.
+Aliasing is where some part of a program
+is dealing with two references which might or might not point to the same
+thing — importantly, you can't make guarantees for the sake of
+safety (or optimization) that they <em>don't</em> point to the same thing.
+So you have to assume that they might.</p>
+
+<p>The contribution of type qualifiers to this is that in some situations
+you might be able to give the two references two different type qualifiers,
+even though they are basically the same type, thus guaranteeing that they
+don't in fact refer to the same value.</p>
+
+<p>There's a significant problem with this, though: it
+still doesn't give you a hard-and-fast guarantee that no aliasing is occurring,
+because the module that defines a modifier can still do whatever it likes with it
+internally.  It gives you only a sort of "module-level guarantee"; only if you trust the
+individual modules involved to not be aliasing values of these types,
+can you be sure the values won't be aliased "in the large".</p>
+
+<p>In addition, it's far from certain that there are lots of cases where this would
+<em>in practice</em> support some genuine non-trivial beneficial code pattern while
+preventing aliasing.  It could be that all examples where this works are quite
+contrived.  I suppose that if I were to do further work on Dieter, it would be to try to
+discover whether this is really the case or not.</p>
+
+<h3>Related work</h3>
+
+<p>Type qualifiers have been around informally for a long time, probably almost as long as
+there have been types.  Here's <a class="external" href="http://www.lysator.liu.se/c/dmr-on-noalias.html">Dennis Ritchie
+ranting against certain type qualifiers proposed for ANSI C</a>.  (One of which, coincidentally, was intended to deal with
+aliasing, albiet quite myopically.)</p>
+
+<p>Mark P Jones has written
+<a class="external" href="http://web.cecs.pdx.edu/~mpj/pubs/esop92.html">a paper</a>
+and <a class="external" href="http://web.cecs.pdx.edu/~mpj/pubs/thesis.html">a thesis-turned-book</a>
+describing a theory of qualified types. Dieter can be seen as a concrete instance of
+Jones's theory (as can many other type systems — it's a very general theory),
+although I have not explicated it as such here, as the resulting article would likely have been much less accessible.</p>
+
+<p>Haskell's type classes (another type system easily seen as a concrete instance of qualified types)
+are very similar to Dieter's type qualifiers.  However, in Haskell, every type either belongs to or does not
+belong to some class: every <code>Int</code> is an <code>Eq Ord</code>, due to the mathematical
+properties of <code>Int</code>s.
+In Dieter, every type can potentially be modified with every qualifier: there can be <code>int</code>s,
+<code>eq int</code>s, <code>ord int</code>s, and <code>eq ord int</code>s, all slightly different.</p>
+
+<p>On the other end of the spectrum, solidly in the domain of application rather than theory,
+<a class="external" href="http://www.cs.umd.edu/~jfoster/cqual/">CQUAL</a>
+is an extension of C which adds user-defined type qualifiers.
+CQUAL is primarily concerned with inferring type qualifiers
+where there are none, and is not concerned with encapsulating qualifiers within modules.</p>
+
+<h2>Conclusion</h2>
+
+<p>I hope you found Dieter to be an entertaining little diversion through type-qualifier-land
+(and that you did not expect too much more, or I imagine you'll have been
+somewhat disappointed.)</p>
+
+<p>Although there is no reference implementation of Dieter (and it's unlikely that there could be without
+some more specified semantics,) there is a reference parser and type-checker (not at all guaranteed to be bug-free)
+written in Python of all things.</p>
+
+<h2>Appendix A</h2>
+
+<h3>Polymorphic Typing with Type Qualifiers</h3>
+
+<p>While Dieter does not support full-blown type inference — all variables must be
+explicitly notated with their type — it does support uniform polymorphic typing using type variables, and it uses the
+core mechanism of type inference, namely unification, to give those variables concrete types at each usage instance.</p>
+
+<p>In place of a concrete type, a type variable may be given.  Like a concrete type, this type variable can
+possess any number of type qualifiers.  During each instance of the thing being
+typed (for example, each call to a procedure,) the type variables are resolved
+into concrete types by unification.</p>
+
+<p>The presence of type qualifiers makes this process more complicated.</p>
+
+<p>The first thing to note is that unification during inference is no longer
+commutative — it is no longer the case that, if <var>A</var>
+unifies with <var>B</var>, then <var>B</var> necessarily unifies with
+<var>A</var>.  As mentioned, a procedure with a formal parameter of
+type <code>gnarly int</code> will not accept (i.e. is not compatible
+with) an actual parameter with type simply <code>int</code>.
+But the reverse situation is acceptable — we think of the
+<code>gnarly</code> modifier being 'dropped'.  The convention we will
+use when describing this non-commutative unification is to call the
+formal parameter (or variable being assigned to) the <dfn>receptor</dfn>
+and write it on the left, and call the actual parameter (or expression
+being assigned) the <dfn>provider</dfn> and write it on the right.</p>
+
+<p>The cardinal rule, which applies to every primitive type expression,
+including those with variables, is that <strong>the qualifiers on the provider
+must be a superset of the qualifiers on the receptor</strong>.</p>
+
+<p>As during the conventional algorithm, an unbound type variable in either type expression will
+unify with (take on the binding of) the type subexpression that corresponds with it in
+the other type expression.  In addition, here it will also take on the type
+qualifiers of that subexpresion, if it can.  This leaves us with the question
+of which ones, and when.</p>
+
+<p>If the variable is in the receptor position, it might as well unify with <em>all</em>
+of the type qualifiers on the provider, because those must be a superset
+of the receptor's in order to unify at all, and because down the road,
+they can always be 'dropped' from the variable, should it be used as a
+provider.</p>
+
+<p>If the variable is in the provider position, the type in receptor position
+can't possibly have any more qualifiers than the variable — or it wouldn't
+be able to unify in the first place.  So the variable might as well unify
+with the whole expression in the receptor position.</p>
+
+<p>If both positions contain variables, the provider's variable should be
+bound to the receptor's type expression, because it will be the one
+that is more general.</p>
+
+<p>The other thing to note that differs from conventional type inference
+is that <strong>a type variable, once bound to a qualified type, may be
+<em>re-bound</em> to a less qualified type</strong>.</p>
+
+<h3>Examples</h3>
+
+<p>Module names aren't really important for this, so they're omitted.
+We'll assume the following intrinsics are available:</p>
+
+<pre>
+forward and(bool, bool): bool
+forward equal(♥t, ♥t): bool
+forward print(string): void
+</pre>
+
+<h4>Example 1</h4>
+
+<pre>
+procedure thing(): void
+  var i, j: int
+  var s, t: string
+begin
+  if and(equal(i, j), equal(s, t)) then print("yes") else print("no")
+end
+</pre>
+
+<p>Should typecheck successfully, because the two calls to <code>equal</code>
+are two seperate instances of the type ♥t, but the two parameters inside the
+type signature of <code>equal</code> are the same instance.</p>
+
+<h4>Example 2</h4>
+
+<pre>
+forward glunt(beefy gnarly ♥t): gnarly ♥t
+...
+procedure thing(): void
+  var i: beefy gnarly int
+begin
+  if equal(glunt(i), 4) then print("yes") else print("no")
+end
+</pre>
+
+<p>Should typecheck successfully. The call to <code>glunt</code>
+returns a <code>gnarly int</code>.  Midway through typechecking the
+call to <code>equal</code>, we obtain {♥t → <code>gnarly int</code>}.
+But when we typecheck the second argument we see that it's simply an <code>int</code>.
+We <em>re-bind</em> the variable to obtain {♥t → <code>int</code>}.
+This is OK with respect to the first argument — we just consider the
+<code>gnarly</code> to be dropped.</p>
+
+<h4>Example 3</h4>
+
+<pre>
+forward traub(beefy gnarly ♥t): bool
+...
+procedure thing(p: beefy ♥s): ♥s
+begin
+  if traub(p) then print("yes") else print("no")
+  return p
+end
+</pre>
+
+<p>Should <em>not</em> typecheck.  The call to <code>traub</code>
+needs something qualified with both <code>beefy</code> and <code>gnarly</code>.
+<code>beefy ♥s</code> will fail to unify with it.</p>
+
+<h2>Grammar</h2>
+
+<pre>
+Dieter    ::= {Module | Ordering | Forward} ".".
+Ordering  ::= "order" Name/qual "&lt;" Name/qual.
+Module    ::= "module" Name/qual {"var" VarDecl} {ProcDecl} "end".
+Forward   ::= "forward" Name/proc "(" [Type {"," Type}] ")" ":" Type.
+VarDecl   ::= Name/var ":" Type.
+ProcDecl  ::= "procedure" Name/proc "(" [VarDecl {"," VarDecl}] ")" ":" Type {"var" VarDecl} Statement.
+Statement ::= "begin" {Statement} "end"
+            | "if" Expr "then" Statement ["else" Statement]
+            | "while" Expr "do" Statement
+            | Name/var ["[" Expr "]"] ":=" Expr
+            | Name/proc "(" [Expr {"," Expr}] ")"
+            | "return" ["final"] Expr
+            .
+Expr      ::= Name/var ["[" Expr "]"]
+            | Name/proc "(" [Expr {"," Expr}] ")"
+            | "(" Expr ")"
+            | "bestow" Qualifier Expr
+            | "super"
+            .
+Type      ::= {Name/qual} BareType.
+BareType  ::= "map" ["from" Type] "to" Type
+            | "♥" Name/tvar
+            | "bool" | "int" | "rat" | "string" | "ref"
+            .
+</pre>
+</body>
+</html>

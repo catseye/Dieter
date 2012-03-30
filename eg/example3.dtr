@@ -1,0 +1,18 @@
+/* -*- encoding: utf-8 -*- */
+/* check that proc(beefy gnarly ♥t) cannot be passed something not known to be gnarly */
+
+forward and(bool, bool): bool
+forward equal(♥t, ♥t): bool
+forward print(string): void
+
+forward traub(beefy gnarly ♥t): bool
+
+module example3 fails /* because we pass traub something that isn't known to be gnarly */
+
+procedure thing(p: beefy ♥s): ♥s
+begin
+  if traub(p) then print("yes") else print("no")
+  return p
+end
+
+end.

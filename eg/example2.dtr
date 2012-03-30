@@ -1,0 +1,18 @@
+/* -*- encoding: utf-8 -*- */
+/* check that equal(♥t, ♥t) unifies with equal(gnarly int, int) */
+
+forward and(bool, bool): bool
+forward equal(♥t, ♥t): bool
+forward print(string): void
+
+forward glunt(beefy gnarly ♥t): gnarly ♥t
+
+module example2
+
+procedure thing(): void
+  var i: beefy gnarly int
+begin
+  if equal(glunt(i), 4) then print("yes") else print("no")
+end
+
+end.

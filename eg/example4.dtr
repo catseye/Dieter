@@ -1,0 +1,22 @@
+/* -*- encoding: utf-8 -*- */
+/* check that a gnarly int variable can be assigned a value of type beefy gnarly int */
+
+forward and(bool, bool): bool
+forward equal(♥t, ♥t): bool
+forward print(string): void
+
+forward geget(int): beefy gnarly int
+forward traub(gnarly ♥t): bool
+
+module example4
+
+procedure thing(): void
+  var i: gnarly int
+  var j: gnarly int
+begin
+  j := geget(i)
+  if traub(i) then print("yes") else print("no")
+  if traub(j) then print("yes") else print("no")
+end
+
+end.

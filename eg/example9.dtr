@@ -1,0 +1,31 @@
+/* -*- encoding: utf-8 -*- */
+/* from the article */
+
+forward new_ref(): ref
+forward succ(int): int
+
+module person
+
+  var name_map: map from person ref to string
+  var age_map: map from person ref to int
+
+  procedure person_new(name: string, age: int): person ref
+    var p: person ref
+  begin
+    p := bestow person new_ref()
+    name_map[p] := name
+    age_map[p] := age
+    return p
+  end
+
+  procedure person_get_name(p: person ref): string
+  begin
+    return name_map[p]
+  end
+
+  procedure person_attend_birthday_party(p: person ref): void
+  begin
+    age_map[p] := succ(age_map[p])
+  end
+
+end.
