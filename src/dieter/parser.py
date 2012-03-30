@@ -33,7 +33,8 @@ class Parser(object):
                 forward = self.Forward()
                 program.add_forward(forward)
             else:
-                self.error("expected order, module or forward, found " + token)
+                self.error("expected order, module or forward, found " +
+                           self.scanner.token)
         return program
 
     def Ordering(self):

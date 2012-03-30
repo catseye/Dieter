@@ -327,8 +327,8 @@ class TypeVar(Type):
             provider.bind_to(receptor)
             return True
 
-        lhs_type = receptor_type.get_binding()
-        rhs_type = provider_type.get_binding()
+        lhs_type = receptor.get_binding()
+        rhs_type = provider.get_binding()
         
         return lhs_type.unify(rhs_type)
 

@@ -9,7 +9,6 @@ $Id: ast.py 398 2010-02-04 00:20:41Z cpressey $
 import logging
 
 import dieter.type as type
-import dieter.context as context
 
 logger = logging.getLogger("ast")
 
@@ -252,8 +251,7 @@ class IfStatement(AST):
 
     def typecheck(self, context):
         self.test.typecheck(context)
-        test_type = self.test.type
-        context.assert_equiv("if", type.TypeBool(), test_type)
+        context.assert_equiv("if", type.TypeBool(), self.test.type)
         self.then_stmt.typecheck(context)
         self.else_stmt.typecheck(context)
 
@@ -272,7 +270,7 @@ class WhileStatement(AST):
 
     def typecheck(self, context):
         self.test.typecheck(context)
-        context.assert_equiv("while", test_type, type.TypeBool())
+        context.assert_equiv("while", self.test.type, type.TypeBool())
         self.body.typecheck(context)
 
 
