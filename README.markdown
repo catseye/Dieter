@@ -11,7 +11,7 @@ article, we'll first describe these mechanisms. Then we'll show how
 their interaction produces something that resembles object-oriented
 programming.
 
-### Type Qualifiers
+### Type Qualifiers ###
 
 A type qualifier is simply a keyword which may be placed before any type
 expression, further specializing it. Type qualifiers should be familiar
@@ -44,7 +44,7 @@ you prefer, while all `beefy int`s are `int`s, there are `int`s that
 aren't `beefy` and thus can't be assigned to a variable which is
 restricted to `beefy int`s.
 
-### Type Operators
+### Type Operators ###
 
 In order to make use of type qualifiers in user programs, Dieter
 provides type operators, similar to C's type-casting facilities, to
@@ -65,7 +65,7 @@ can be assigned to an `int`.)
 Note that type operators in no way alter the *value* of the expression
 they are used in, only its *type*.
 
-### Type Variables
+### Type Variables ###
 
 Dieter supports uniform polymorphic types. Type expressions can contain
 type variables (which I'll denote with ♥ for no good reason) which can
@@ -89,7 +89,7 @@ most general unifier is {`♥t` → `gnarly int`}. This has a few
 implications for the unification algorithm; see [Appendix
 A](#appendix_a) for a detailed discussion of these.
 
-### Modules
+### Modules ###
 
 Dieter is a modular language, which has its usual meaning — a Dieter
 program consists of a set of modules, each of which exposes only its
@@ -108,7 +108,7 @@ qualifier. This is a form of encapsulation: the internal details of some
 thing (in this case, a type modifier) can only be manipulated by the
 implementation of that thing.
 
-### Procedures
+### Procedures ###
 
 Each Dieter module consists of a set of procedure declarations. Any
 procedure can be called from any procedure in any module; they are
@@ -126,7 +126,7 @@ procedures intrinsic to the implementation, procedures external to some
 set of modules, or completely ficticious procedures for the purpose of
 demonstrating and testing the type system.
 
-### Example
+### Example ###
 
 We're now ready to give a very simple example of a Dieter module.
 
@@ -147,7 +147,7 @@ it breaks the abstraction we just presented; it implements something
 akin to a "generic setter method," providing direct access to a data
 member that is ordinarily private.
 
-### Object-oriented Programming
+### Object-oriented Programming ###
 
 We'll now try to show that this interaction between type qualifiers and
 modules produces something resembling object-oriented programming by
@@ -204,7 +204,7 @@ expressions can result in a type qualified by `person`. More to the
 point, we know that no other procedure in any other module can create a
 `person`-qualified type without calling `person_new`.
 
-### Mixins
+### Mixins ###
 
 If we loosen the constraints on `map`s, and say that the range (key)
 type can be left unspecified and that values of all types can be used as
@@ -240,7 +240,7 @@ be a reason for OO languages to not treat it as an object. And if you
 believe seperate instances of 4 are silly, that's an argument against
 "everything is an object".
 
-### Inheritance
+### Inheritance ###
 
 Since module-level variables are private to each module, they give
 Dieter something akin to traditional encapsulation. But what about
@@ -324,7 +324,7 @@ Background
 
 Why did I design this language, anyway?
 
-### Hungarian Notation
+### Hungarian Notation ###
 
 The origins of the central idea in Dieter — **encapsulate type
 qualifiers in modules that define them** — was an indirect result of
@@ -341,7 +341,7 @@ the roles, too? Well, you can, and that's basically what Dieter is doing
 with type qualifiers — using them as a computer-checkable form of
 Hungarian notation.
 
-### Aliasing Prevention
+### Aliasing Prevention ###
 
 What further spurred development of the idea was the problem of
 aliasing. Aliasing is where some part of a program is dealing with two
@@ -370,7 +370,7 @@ where this works are quite contrived. I suppose that if I were to do
 further work on Dieter, it would be to try to discover whether this is
 really the case or not.
 
-### Related work
+### Related work ###
 
 Type qualifiers have been around informally for a long time, probably
 almost as long as there have been types. Here's [Dennis Ritchie ranting
@@ -416,7 +416,7 @@ be bug-free) written in Python of all things.
 Appendix A
 ----------
 
-### Polymorphic Typing with Type Qualifiers
+### Polymorphic Typing with Type Qualifiers ###
 
 While Dieter does not support full-blown type inference — all variables
 must be explicitly notated with their type — it does support uniform
@@ -474,7 +474,7 @@ The other thing to note that differs from conventional type inference is
 that **a type variable, once bound to a qualified type, may be
 *re-bound* to a less qualified type**.
 
-### Examples
+### Examples ###
 
 Module names aren't really important for this, so they're omitted. We'll
 assume the following intrinsics are available:
@@ -483,7 +483,7 @@ assume the following intrinsics are available:
     forward equal(♥t, ♥t): bool
     forward print(string): void
 
-#### Example 1
+#### Example 1 ####
 
     procedure thing(): void
       var i, j: int
@@ -496,7 +496,7 @@ Should typecheck successfully, because the two calls to `equal` are two
 seperate instances of the type ♥t, but the two parameters inside the
 type signature of `equal` are the same instance.
 
-#### Example 2
+#### Example 2 ####
 
     forward glunt(beefy gnarly ♥t): gnarly ♥t
     ...
@@ -513,7 +513,7 @@ that it's simply an `int`. We *re-bind* the variable to obtain {♥t →
 `int`}. This is OK with respect to the first argument — we just consider
 the `gnarly` to be dropped.
 
-#### Example 3
+#### Example 3 ####
 
     forward traub(beefy gnarly ♥t): bool
     ...
