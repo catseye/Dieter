@@ -75,10 +75,10 @@ class Program(AST):
                 failed = False
                 try:
                     module.typecheck(context)
-                except context.TypingError, e:
+                except context.TypingError as e:
                     logger.info("caught TypingError " + str(e))
                     failed = True
-                except Exception, e:
+                except Exception as e:
                     logger.info("caught Exception " + str(e))
                 finally:
                     if not failed:

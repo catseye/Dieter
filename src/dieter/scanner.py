@@ -15,7 +15,10 @@ class Scanner(object):
         Create a new Scanner object that will consume the given
         UTF-8 encoded input string.
         """
-        self._input = unicode(input, 'utf-8')
+        try:
+            self._input = unicode(input, 'utf-8')
+        except NameError:
+            self._input = input.decode('utf-8')
         self._token = None
         self.scan()
 
@@ -69,7 +72,7 @@ class Scanner(object):
             self._token = self._input[0]
             self._input = self._input[1:]
             self.toktype = "op"
-        #print "scanned: '" + str(self._token) + "'"
+        # print("scanned: '" + str(self._token) + "'")
     
     def get_token(self):
         """
@@ -102,5 +105,5 @@ class Scanner(object):
         """
         Log the given scan error.
         """
-        print "error: " + str
+        print("error: " + str)
         self.scan()
