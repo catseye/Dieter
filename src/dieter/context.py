@@ -64,9 +64,9 @@ class TypingContext(object):
     def dump(self):
         for k, v in self.map.iteritems():
             if isinstance(v, Type):
-                print k + " : " + str(v)  # return string instead?
+                print(k + " : " + str(v))  # return string instead?
             else:
-                print k + " : " + v
+                print(k + " : " + v)
 
     def assert_equiv(self, inwhat, s, t):
         if not s.unify(t):

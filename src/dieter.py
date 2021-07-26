@@ -16,9 +16,8 @@ from dieter.context import TypingContext
 
 
 def load(filename, options):
-    f = open(filename, "r")
-    scanner = Scanner(f.read())
-    f.close()
+    with open(filename, "rb") as f:
+        scanner = Scanner(f.read())
     parser = Parser(scanner)
     ast = parser.Dieter()
     context = TypingContext(None)
@@ -26,11 +25,12 @@ def load(filename, options):
         logging.basicConfig(level=logging.INFO)
     ast.typecheck(context)
     if options.dump_ast:
-        print "--- AST: ---"
-        print ast.dump(0)
+        print("--- AST: ---")
+        print(ast.dump(0))
     if options.dump_symtab:
-        print "--- Symbol Table: ---"
+        print("--- Symbol Table: ---")
         context.dump()
+
 
 def main(argv):
     optparser = OptionParser("[python] dieter.py {options} {source.dtr}\n" + __doc__)

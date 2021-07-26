@@ -1,6 +1,9 @@
 The Dieter Programming Language
 ===============================
 
+_Entry_ [@ catseye.tc](https://catseye.tc/node/Dieter)
+| _See also:_ [Castile](https://github.com/catseye/Castile#readme)
+
 Description
 -----------
 
